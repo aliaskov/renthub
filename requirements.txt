@@ -1,0 +1,6 @@
+mysqlclient
+django
+django-environ
+djangorestframework
+django-filter
+djangorestframework-simplejwt
