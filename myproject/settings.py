@@ -11,22 +11,36 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
+from django.core.management.utils import get_random_secret_key
+import os
 from datetime import timedelta
+
+
+env = environ.Env(
+    SECRET_KEY=(str, get_random_secret_key()),
+    DEBUG=(bool, False),
+    ALLOWED_HOSTS=(list, []),
+    MYSQL=(bool, False)
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--%rxfzo+_fa+9@g+*zl!k&bk051r&+3#u4l^r1n$beoeby30t('
+# SECRET_KEY = 'django-insecure--%rxfzo+_fa+9@g+*zl!k&bk051r&+3#u4l^r1n$beoeby30t('
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -82,12 +96,24 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if env('MYSQL'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': f'{env("MYSQL_DATABASE")}',
+            'USER': f'{env("MYSQL_USER")}',
+            'PASSWORD': f'{env("MYSQL_PASSWORD")}',
+            'HOST': f'{env("MYSQL_HOST")}',
+            'PORT': f'{env("MYSQL_PORT")}',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / f'{env("SQLITE_DATABASE")}',
+        }
+    }
 
 
 # Password validation
@@ -124,7 +150,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

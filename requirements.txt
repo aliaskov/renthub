@@ -4,3 +4,4 @@ django-environ
 djangorestframework
 django-filter
 djangorestframework-simplejwt
+gunicorn

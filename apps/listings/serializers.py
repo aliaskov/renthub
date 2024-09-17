@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import serializers
 
 from apps.users.serializers import UserSerializer
-from apps.listings.models import Listing, SearchHistory
+from apps.listings.models import Listing, ViewHistory, SearchHistory
 
 
 class ChoicesSerializer(serializers.Serializer):
@@ -49,6 +49,26 @@ class ListingSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(
                 reverse('listing-detail', kwargs={'pk': obj.pk})
+            )
+        return None
+
+
+class ViewHistorySerializer(serializers.ModelSerializer):
+    listing_str = serializers.SerializerMethodField()
+    listing_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ViewHistory
+        exclude = ['id', 'user']
+
+    def get_listing_str(self, obj):
+        return f'{obj.listing.title} - {obj.listing.address}'
+
+    def get_listing_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(
+                reverse('listing-detail', kwargs={'pk': obj.listing.pk})
             )
         return None
 

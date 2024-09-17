@@ -15,6 +15,7 @@ from apps.listings.models import (
 from apps.listings.serializers import (
     ChoicesSerializer,
     ListingSerializer,
+    ViewHistorySerializer,
     SearchHistorySerializer
 )
 from apps.listings.filters import CustomSearchFilter
@@ -58,8 +59,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         'rooms': ['range'],
         # Тип жилья (возможность выбрать тип жилья квартира,
         # дом, студия и т.д.)
-        'property_type': ['exact']
+        'property_type': ['exact'],
         # Местоположение: (возможность указать город или район в Германии)
+        'address': ['icontains']
     }
     # Пользователь вводит ключевые слова, по которым производится поиск
     # в заголовках и описаниях объявлений
@@ -124,8 +126,10 @@ class ListingViewSet(viewsets.ModelViewSet):
         view_history = ViewHistory.objects.filter(
             user=request.user
         ).order_by('-viewed_at')
-        view_history = [view.listing for view in view_history]
-        serializer = self.get_serializer(view_history, many=True)
+        view_history = [view for view in view_history]
+        serializer = ViewHistorySerializer(
+            view_history, many=True, context={'request': request}
+        )
         return Response(serializer.data)
 
     @action(
