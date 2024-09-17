@@ -1,7 +1,6 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
@@ -13,32 +12,47 @@ services:
     ports:
       - "3306:3306"
 
-  backend:
-    build: .
-    container_name: backend
-    command: gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - mysql
+  api:
+    image: python:3.9
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
       MYSQL_DATABASE: '${MYSQL_DATABASE}'
       MYSQL_USER: '${MYSQL_USER}'
       MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
+    volumes:
+      - .:/app
+      - ./static:/app/static
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    command: >
+      sh -c "
+      pip install -r requirements.txt &&
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      echo \"from django.contrib.auth import get_user_model; User = get_user_model(); \
+      User.objects.create_superuser( \
+        '${DJANGO_SUPERUSER_USERNAME}', \
+        '${DJANGO_SUPERUSER_EMAIL}', \
+        '${DJANGO_SUPERUSER_PASSWORD}' \
+      ) if not User.objects.filter(username='${DJANGO_SUPERUSER_USERNAME}').exists() else print('Superuser already exists')\" \
+      | python manage.py shell &&
+      gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
+      "
+    depends_on:
+      - mysql
 
   nginx:
     image: nginx:latest
-    container_name: nginx
+    restart: always
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./static:/static 
     ports:
       - "80:80"
     depends_on:
-      - backend
+      - api
 
 volumes:
   mysql_data:
