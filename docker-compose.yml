@@ -9,8 +9,11 @@ services:
       MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
     volumes:
       - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+   # Разрешить подключение с хоста и других локаций 
+   # command: --bind-address=0.0.0.0
+   # ports:
+   #   - "3306:3306"
 
   api:
     image: python:3.9
